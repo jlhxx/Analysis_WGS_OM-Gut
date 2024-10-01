@@ -1,5 +1,5 @@
 #metaphlan script 2
-setwd("C:/Users/jlhxl/OneDrive/Desktop/Metahlan4 - working data LT")
+setwd("dir...")
 
 library("ggplot2")      # graphics
 library("readxl")       # necessary to import the data from Excel file

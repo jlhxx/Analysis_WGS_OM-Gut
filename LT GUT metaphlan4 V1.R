@@ -1,4 +1,4 @@
-#metaphlan script 2
+#Phyloseq
 setwd("dir...")
 
 library("ggplot2")      # graphics

@@ -55,7 +55,7 @@ samples = sample_data(samples_df)
 #make phyloseq obj
 Saliva <- phyloseq(OTU, TAX, samples)
 ###########################################################
-#REMOVE GGB
+#REMOVE GGB if necessary
 tax_table_saliva<-tax_table(Saliva)
 # Extract the taxa names for species
 species_names <- tax_table_saliva[, "Species"]
@@ -98,8 +98,8 @@ saliva_filtered_abundance <- prune_taxa(apply(otu_table(saliva_rel_abundance), 1
 
 # The final filtered phyloseq object
 saliva_filtered_abundance
-write.table(otu_table(saliva_filtered_abundance), file="clipboard-16384", sep="\t", col.names=NA)
-write.table(tax_table(saliva_filtered_abundance), file="clipboard-16384", sep="\t", col.names=NA)
+#write.table(otu_table(saliva_filtered_abundance), file="clipboard-16384", sep="\t", col.names=NA)
+#write.table(tax_table(saliva_filtered_abundance), file="clipboard-16384", sep="\t", col.names=NA)
 
 
 ########################################################
@@ -133,7 +133,7 @@ head(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
 
 ############################################
 
-set.seed(9242)  # This will help in reproducing the filtering and nomalisation. 
+set.seed(9242)  #reproducing the filtering and nomalisation. 
 summary(sample_sums(Saliva.prune))
 
 #barplot(sample_sums(ps0.rar), las =2)
@@ -150,7 +150,7 @@ p.rar
 hmp.div <- alpha(ps0.rar, index = "all")
 #datatable(hmp.div)
 
-# get the metadata out as seprate object
+# get the metadata
 hmp.meta <- meta(ps0.rar)
 
 # Add the rownames as a new colum for easy integration later.
@@ -230,25 +230,24 @@ ps1.com <- saliva_filtered_abundance
 # if you have dada2/deblur output and sequences as taxa names, then you can change them as follows
 taxa_names(ps1.com) <- paste0("ASV_", rownames(tax_table(ps1.com)))
 
-# We need to set Palette
+#Set Palette
 taxic <- as.data.frame(ps1.com@tax_table) # this will help in setting large color options
 
 # colourCount = length(unique(taxic$Species))  #define number of variable colors based on number of Species (change the level accordingly to Species/Species/Species)
 # getPalette = colorRampPalette(brewer.pal(12, "Paired"))  # change the palette as well as the number of colors will change according to palette.
 
-taxic$OTU <- rownames(taxic) # Add the OTU ids from OTU table into the taxa table at the end.
-colnames(taxic) # You can see that we now have extra taxonomy levels.
+taxic$OTU <- rownames(taxic) # Add the OTU/ASV ids from OTU table into the taxa table at the end.
+colnames(taxic) # now have extra taxonomy levels.
 
 taxmat <- as.matrix(taxic) # convert it into a matrix.
 new.tax <- tax_table(taxmat) # convert into phyloseq compatible file.
 tax_table(ps1.com) <- new.tax # incroporate into phyloseq Object
 
 
-# now edit the unSpeciesified taxa
+# Edit the unSpeciesified taxa
 tax_table(ps1.com)[tax_table(ps1.com)[, "Species"] == "", "Species"] <- "UnSpeciesified Species"
 
-# it would be nice to have the Taxonomic names in italics.
-# for that we set this
+# Taxonomic names in italics
 
 guide_italics <- guides(fill = guide_legend(label.theme = element_text(
   size = 15,
@@ -256,14 +255,10 @@ guide_italics <- guides(fill = guide_legend(label.theme = element_text(
 )))
 
 
-## Now we need to plot at Species level, we can do it as follows:
-
-# first remove the phy_tree
-
+## Plot at Species level - select top 10 highest rel abundance
 ps1.com@phy_tree <- NULL
 
-# Second merge at Species level
-
+# Merge at Species level
 ps1.com.fam <- microbiomeutilities::aggregate_top_taxa2(ps1.com, "Species", top = 10)
 
 plot.composition.COuntAbun <- plot_composition(ps1.com.fam) + theme(legend.position = "bottom") +
@@ -274,11 +269,11 @@ plot.composition.COuntAbun <- plot_composition(ps1.com.fam) + theme(legend.posit
 plot.composition.COuntAbun
 
 #################
-#Barplot relative abundance
+# Barplot relative abundance
 
 # the previous pseq object ps1.com.fam is only counts.
 
-# Use traqnsform function of microbiome to convert it to rel abun.
+# Use transform function of microbiome package to convert it to rel abun.
 ps1.com.fam.rel <- microbiome::transform(ps1.com.fam, "compositional")
 
 plot.composition.relAbun <- plot_composition(ps1.com.fam.rel,
@@ -325,17 +320,14 @@ p.heat <- p.heat + theme(legend.key = element_blank(),
 
 print(p.heat)#
 ###########################################
-# Assuming data.com is your data frame
-# Assume data.com is your DataFrame containing the Sample, Tax, Abundance, and Group columns
-
-# Manually add the 'Group' column based on your criteria
+# Manually add the 'Group' column based on your criteria of metadata
 data.com$Group <- NA
 data.com$Group[data.com$Sample %in% c("S1_baseline_A",	"S3_baseline_A",	"S9_baseline_A",	"S11_baseline_A",	"S12_baseline_A",	"S14_baseline_A",	"S16_baseline_A",	"S18_baseline_A",	"S21_baseline_A",	"S22_baseline_A",	"S26_baseline_A",	"S28_baseline_A",	"S29_baseline_A",	"S30_baseline_A",	"S31_baseline_A",	"S32_baseline_A",	"S10_baseline_A")] <- "baseline A"
 data.com$Group[data.com$Sample %in% c("S1_baseline_B",	"S3_baseline_B",	"S10_baseline_B",	"S11_baseline_B",	"S12_baseline_B",	"S14_baseline_B",	"S16_baseline_B",	"S18_baseline_B",	"S21_baseline_B",	"S22_baseline_B",	"S26_baseline_B",	"S28_baseline_B",	"S29_baseline_B",	"S30_baseline_B",	"S31_baseline_B",	"S32_baseline_B",	"S9_baseline_B")] <- "baseline B"
 data.com$Group[data.com$Sample %in% c("S1_post_A",	"S3_post_A",	"S10_post_A",	"S11_post_A",	"S12_post_A",	"S14_post_A",	"S16_post_A",	"S18_post_A",	"S21_post_A",	"S22_post_A",	"S26_post_A",	"S28_post_A",	"S29_post_A",	"S30_post_A",	"S31_post_A",	"S32_post_A",	"S9_post_A")] <- "post A"
 data.com$Group[data.com$Sample %in% c("S1_post_B",	"S3_post_B",	"S9_post_B",	"S10_post_B",	"S11_post_B",	"S12_post_B",	"S14_post_B",	"S16_post_B",	"S18_post_B",	"S21_post_B",	"S22_post_B",	"S26_post_B",	"S28_post_B",	"S30_post_B",	"S29_post_B",	"S31_post_B",	"S32_post_B")] <- "post B"
 
-# Create the heatmap with ggplot2
+# Create heatmap with ggplot2
 p.heat <- ggplot(data.com, aes(x = Sample, y = Tax)) + 
   geom_tile(aes(fill = Abundance)) + 
   scale_fill_distiller("Abundance", palette = "RdYlBu") + 
@@ -352,7 +344,6 @@ p.heat <- ggplot(data.com, aes(x = Sample, y = Tax)) +
         strip.background = element_rect(colour = "black", 
                                         fill = "white"))
 
-# Print the heatmap
 print(p.heat)
 ##########################################
 # we use count data at Species level from the barplot for counts
@@ -378,8 +369,7 @@ p.box + rremove("x.text")
 #Beta-diversity: Measures for differences between samples from different groups to identify if there are differences in the overall community composition and structure.
 #Unweighted Unifrac
 #Unweighted Unifrac is based on presence/absence of different taxa and abundance is not important.
-# it is sensitive to the sequencing depth. If a sample is sequenced more than the others then it may have many OTUs (most of them unique) consequently affecting the unifrac dissimilarity estimation.
-#Usually, using subOTU/ASV approaches many singletons/OTUs with very low reads are discarded. If you have you won data you try the following code. For data from NG-tax we will skip this step as we have no singletons.
+# it is sensitive to the sequencing depth. 
 # if we remove OTUs that are detected at least 10 times in 5% of the samples
 #saliva.prune not rareified
 #ps0.rar is rareified
@@ -402,7 +392,7 @@ p <- plot_landscape(ps1.rel,
 p <- p + scale_color_brewer(palette = "Dark2")+ scale_fill_gradient(low = "#e0ecf4", high = "orange") 
 p 
 ##################################
-#Core microbiota anlaysis
+#Core anlaysis
 # convert to relative abundance  
 
 ps1.stool.rel <- microbiome::transform(ps1, "compositional")
@@ -416,7 +406,6 @@ core.taxa.standard <- core_members(ps1.stool.rel2, detection = 0.001, prevalence
 print(core.taxa.standard)
 
 # Extract the taxonomy table
-
 taxonomy <- as.data.frame(tax_table(ps1.stool.rel2))
 
 # Subset this taxonomy table to include only core OTUs  
@@ -436,7 +425,7 @@ DT::datatable(as.data.frame(core.abundance))
 prevalences <- seq(.05, 1, .05)
 detections <- 10^seq(log10(1e-3), log10(.2), length = 10)
 
-# Also define gray color palette
+# define gray color palette
 gray <- gray(seq(0,1,length=5))
 p.core <- plot_core(ps1.stool.rel2, 
                     plot.type = "heatmap", 
@@ -445,7 +434,8 @@ p.core <- plot_core(ps1.stool.rel2,
                     detections = detections, 
                     min.prevalence = .5) +
   xlab("Detection Threshold (Relative Abundance (%))")
-print(p.core)    
+print(p.core)   
+                 
 # Same with the viridis color palette
 # color-blind friendly and uniform
 # options: viridis, magma, plasma, inferno
@@ -480,5 +470,3 @@ p.core <- plot_core(ps1.stool.rel2.f,
 
 p.core + theme(axis.text.y = element_text(face="italic"))
 print(p.core)
-###############################################
-#Differential abundance testing for univariate data

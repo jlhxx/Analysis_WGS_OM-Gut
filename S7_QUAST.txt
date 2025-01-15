@@ -1,0 +1,49 @@
+# Assessing the quality of assembled genomic bin files using QUAST (quality assessment tool for genome assemblies)
+# Load QUAST
+module load QUAST/5.0.2-foss-2019a-Python-3.7.2
+
+# Define paths
+samples_file="dir.../samples.txt" #sample names
+bins_dir="dir.../step6_metabat2"  #bin files
+output_dir="dir.../step7_QUAST"  # QUAST output
+
+# Create output
+mkdir -p "${output_dir}"
+
+# Check samples_file
+if [ ! -f "${samples_file}" ]; then
+  echo "Error: ${samples_file} not found!"
+  exit 1
+fi
+
+# Read sample name from the samples file
+while IFS= read -r sample; do
+  echo "Processing sample: ${sample}"
+
+  # Define output directory for QUAST
+  sample_output_dir="${output_dir}/${sample}_quast"
+  mkdir -p "${sample_output_dir}"
+
+  # Find bin files for the current sample in its subdirectory
+  bin_files=$(ls "${bins_dir}/${sample}/${sample}_mock_bins".*.fa 2>/dev/null)
+
+  if [ -z "${bin_files}" ]; then
+    echo "Error: No bin files found for sample ${sample} in ${bins_dir}/${sample}"
+    continue
+  fi
+
+  # Run QUAST
+  echo "Running QUAST on bins for sample ${sample}"
+  quast.py ${bin_files} -o "${sample_output_dir}"
+
+  # Check QUAST
+  if [ $? -ne 0 ]; then
+    echo "Error: QUAST failed for sample ${sample}"
+    continue
+  fi
+
+  echo "QUAST completed for sample ${sample}. Results are in ${sample_output_dir}"
+
+done < "${samples_file}"
+
+echo "All samples processed."

@@ -1,0 +1,61 @@
+# Load the MetaBAT2 environment
+module load Anaconda3/2023.07-2
+source activate metabat2_env 
+
+samples_file=dir.../samples.txt
+
+# Check
+if [ ! -f "${samples_file}" ]; then
+  echo "Error: ${samples_file} not found!"
+  exit 1
+fi
+
+# Get the sample name from the samples file, removing the '.bam' extension if necessary
+sample=$(tail -n+${SLURM_ARRAY_TASK_ID} ${samples_file} | head -n 1 | sed 's/.bam$//')
+echo "Sample: (${sample})"
+
+# Construct the input BAM file path
+input_bam="dir.../step4_index_sorted_bam/${sample}_alignments.sorted.bam"
+echo "Input BAM path: ${input_bam}"
+
+# Check if BAM file exists
+if [ ! -f "${input_bam}" ]; then
+  echo "Error: Input BAM file does not exist: ${input_bam}"
+  exit 1
+fi
+
+# Create output dir if necessary
+output_dir="dir/step6_metabat2"
+mkdir -p "${output_dir}"
+
+# Set the output MetaBAT2 bin path
+output_bins="${output_dir}/${sample}_bins"
+
+# Batch run MetaBAT2 (tool for metagenome binning)
+# Set paths for contigs & depth files
+contigs_fasta="dir.../spades_output_${sample}_contigs.fasta"
+depth_file="dir.../step5_depth/${sample}_depth.txt"
+
+# Check
+if [ ! -f "${contigs_fasta}" ]; then
+  echo "Error: Contigs file does not exist: ${contigs_fasta}"
+  exit 1
+fi
+
+if [ ! -f "${depth_file}" ]; then
+  echo "Error: Depth file does not exist: ${depth_file}"
+  exit 1
+fi
+
+# Run MetaBAT2
+echo "Running MetaBAT2 on: ${contigs_fasta} and ${depth_file}"
+metabat2 -i "${contigs_fasta}" -a "${depth_file}" -o "${output_bins}"
+
+# Check if the command was successful
+if [ $? -ne 0 ]; then
+  echo "Error: MetaBAT2 failed for ${sample}"
+  exit 1
+fi
+
+echo "MetaBAT2 binning complete for sample: (${sample})"
+echo "Output bins directory: ${output_bins}"

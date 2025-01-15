@@ -1,0 +1,69 @@
+# Convert SAM files to BAM files and sorting the BAM files.
+# Load Bio-SamTools module
+module load Bio-SamTools/1.43-intel-2017a-Perl-5.24.1
+
+# Directory where SAM files are located
+sam_dir="dir.../step2_alignments_sam"
+
+# Output directory for BAM files
+output_dir="dir.../step3_sam_to_bam"
+
+# Create output directory if it doesn't exist
+mkdir -p "$output_dir"
+
+# Loop through each SAM file in the sam_dir
+for sam_file in "$sam_dir"/*.sam; do
+    if [ -f "$sam_file" ]; then
+        # Extract sample name from SAM file name
+        sample_name=$(basename "$sam_file" .sam)
+
+        # Construct path for output BAM file
+        bam_file="$output_dir/${sample_name}.bam"
+
+        # Run samtools view command to convert SAM to BAM
+        samtools view -bS "$sam_file" > "$bam_file"
+
+        echo "Converted $sam_file to $bam_file"
+    else
+        echo "No SAM files found in $sam_dir"
+    fi
+done
+
+###########################################################
+module load Bio-SamTools/1.43-intel-2017a-Perl-5.24.1
+
+input_dir="dir.../step3_sam_to_bam"
+output_dir="dir.../step3.2"
+
+# Check if input_dir exists
+if [ ! -d "$input_dir" ]; then
+  echo "Error: Input directory $input_dir does not exist."
+  exit 1
+fi
+
+# Check if output_dir exists, create if it doesn't
+if [ ! -d "$output_dir" ]; then
+  mkdir -p "$output_dir"
+  if [ $? -ne 0 ]; then
+    echo "Error: Could not create output directory $output_dir."
+    exit 1
+  fi
+fi
+
+for bam_file in "$input_dir"/*_alignments.bam; do
+  if [ -f "$bam_file" ]; then
+    base_name=$(basename "$bam_file" .bam)
+    output_file="${output_dir}/${base_name}.sorted.bam"
+    
+    echo "Sorting $bam_file..."
+    samtools sort "$bam_file" -o "$output_file"
+    
+    if [ $? -eq 0 ]; then
+      echo "Sorted BAM file created: $output_file"
+    else
+      echo "Error: samtools sort failed for $bam_file"
+    fi
+  else
+    echo "Warning: No BAM files found in $input_dir"
+  fi
+done
